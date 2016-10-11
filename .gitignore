@@ -1,2 +1,5 @@
 # output files
 output
+
+# helper scripts
+*.sh

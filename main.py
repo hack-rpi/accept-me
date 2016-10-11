@@ -110,6 +110,18 @@ def accept_by_email(db, collection, email, travel_method, reimburse_val, out_fil
     print('Accepted {0} user{1} with email "{2}"'.format(tot, 's' if tot != 1 else '', email))
 
 
+def update_travel_by_email(db, collection, email, travel_method):
+    email_regex = re.compile(email, re.IGNORECASE)
+    res = db[collection].update_one({'emails.address': email_regex}, {
+         '$set': {
+            'settings.accepted.travel.method': travel_method
+         }
+      }
+    )
+    print('Updated {0}/{1} ({2}) to travel "{3}"'.format(res.modified_count, res.matched_count,
+                                                         email, travel_method))
+
+
 def main(command, subcommand, db, database, collection, out_file, options):
     client = MongoClient(db)
     db = client[database]
@@ -128,12 +140,15 @@ def main(command, subcommand, db, database, collection, out_file, options):
             accept_by_email(db, collection, options['email'], options['travel_method'],
                             options['reimburse_val'], out_file, options['group'],
                             options['overwrite'])
+    elif (command == 'update'):
+        if (subcommand == 'travel'):
+            update_travel_by_email(db, collection, options['email'], options['travel_method'])
 
 if (__name__ == '__main__'):
     parser = argparse.ArgumentParser()
-    parser.add_argument('command', choices=['list', 'accept'])
+    parser.add_argument('command', choices=['list', 'accept', 'update'])
     parser.add_argument('subcommand', nargs='?', choices=['registered', 'accepted', 'confirmed',
-                                                          'school', 'region', 'email'])
+                                                          'school', 'region', 'email', 'travel'])
     parser.add_argument('--db', default=environ.get('MONGO_URL'))
     parser.add_argument('--database', '-d')
     parser.add_argument('--collection', '-c', default='users')
